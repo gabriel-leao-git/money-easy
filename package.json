@@ -1,0 +1,25 @@
+{
+  "name": "money-easy",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Jogo fictício de ficar rico tocando na tela. Mobile first, com Framer Motion e parallax.",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "framer-motion": "^14.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.3"
+  }
+}
