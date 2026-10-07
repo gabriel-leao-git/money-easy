@@ -19,7 +19,11 @@ O fundo é a foto em `public/bg-mining.jpg`, com parallax. Sem esse arquivo, apa
 
 ## Download do app
 
-O botão **Download** do menu baixa o `instal-app.apk` (Android). O arquivo fica na raiz do repo, fora do git, e o `npm run dev` e o `npm run preview` servem ele direto de lá em `/instal-app.apk`, sem copiar. Num host estático só com o `dist/`, o APK não vai junto e o botão dá 404.
+O botão **Download** do menu baixa o `instal-app.apk` (Android), que fica na raiz do repo. O `npm run dev` e o `npm run preview` servem ele direto de lá em `/instal-app.apk`, sem copiar. O build (`dist/`) não leva o APK: quem coloca ele no site publicado é o workflow do GitHub Pages.
+
+## Publicação (GitHub Pages)
+
+Cada push no `main` roda `.github/workflows/pages.yml`: instala, faz o build, junta o APK e publica o `dist/` em https://gabriel-leao-git.github.io/money-easy/. Em **Settings → Pages**, a fonte precisa ser **GitHub Actions**: no modo "Deploy from a branch" o Pages serve o `index.html` cru do repo, que aponta pro TypeScript em `src/`, e a página fica em branco.
 
 ## Login (MVP)
 
