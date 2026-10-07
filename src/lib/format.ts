@@ -1,3 +1,5 @@
+import { BTC_PRICE, HASH_PER_REAL } from '../game/config';
+
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const brlCompact = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -17,6 +19,26 @@ const dateTime = new Intl.DateTimeFormat('pt-BR', {
 export function money(value: number): string {
   const v = Number.isFinite(value) ? value : 0;
   return Math.abs(v) >= 1e6 ? brlCompact.format(v) : brl.format(v);
+}
+
+/** Equivalente em BTC pela cotação fictícia do jogo. */
+export function btc(value: number): string {
+  const coins = (Number.isFinite(value) ? value : 0) / BTC_PRICE;
+  const digits = coins >= 1 ? 4 : 8;
+  return `${coins.toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits })} BTC`;
+}
+
+const HASH_UNITS = ['H/s', 'kH/s', 'MH/s', 'GH/s', 'TH/s', 'PH/s', 'EH/s', 'ZH/s'];
+
+/** Hashrate "de vitrine" derivado da renda por segundo. */
+export function hashrate(incomePerSecond: number): string {
+  let h = Math.max(0, incomePerSecond) * HASH_PER_REAL;
+  let unit = 0;
+  while (h >= 1000 && unit < HASH_UNITS.length - 1) {
+    h /= 1000;
+    unit += 1;
+  }
+  return `${h.toLocaleString('pt-BR', { maximumFractionDigits: h < 10 ? 2 : 1 })} ${HASH_UNITS[unit]}`;
 }
 
 export function count(value: number): string {

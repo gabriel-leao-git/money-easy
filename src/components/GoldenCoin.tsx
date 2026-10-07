@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
+import { CryptoIcon } from './art';
 
 const FLIGHT_MS = 9000;
 const MIN_WAIT_MS = 18_000;
@@ -7,7 +8,7 @@ const EXTRA_WAIT_MS = 37_000;
 
 type Spawn = { id: number; top: number; fromLeft: boolean };
 
-/** De tempos em tempos uma moeda dourada atravessa a tela. Quem pega ganha bônus. */
+/** De tempos em tempos um bloco dourado atravessa a tela. Quem pega ganha bônus. */
 export function GoldenCoin({ onCatch }: { onCatch: () => void }) {
   const reduce = useReducedMotion();
   const [spawn, setSpawn] = useState<Spawn | null>(null);
@@ -57,9 +58,9 @@ export function GoldenCoin({ onCatch }: { onCatch: () => void }) {
           }}
           onPointerDown={grab}
           onClick={grab}
-          aria-label="Moeda dourada! Toque para pegar o bônus"
+          aria-label="Bloco dourado! Toque para pegar o bônus"
         >
-          <span aria-hidden="true">★</span>
+          <CryptoIcon id="btc" size={44} />
         </motion.button>
       )}
     </AnimatePresence>

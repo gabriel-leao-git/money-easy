@@ -1,19 +1,21 @@
 import {
   AWAY_MIN_S,
   BASE_TAP,
-  BUSINESSES,
   COMBO_STEP,
   COMBO_WINDOW_MS,
+  CORE_LEVELS,
   COST_GROWTH,
+  CRYPTOS,
   FRENZY_MULT,
   MAX_COMBO_MULT,
+  MINERS,
   OFFLINE_CAP_S,
   OFFLINE_RATE,
+  OVERCLOCK,
   RANKS,
   TAP_SHARE_OF_INCOME,
-  TAP_UPGRADE,
   type Bot,
-  type Business,
+  type Miner,
 } from './config';
 import { load, save } from '../lib/storage';
 import { profileKey } from './profiles';
@@ -23,13 +25,14 @@ export type Withdrawal = { amount: number; at: number };
 export type GameState = {
   createdAt: number;
   balance: number;
-  lifetime: number; // tudo o que já foi ganho
+  lifetime: number; // tudo o que já foi minerado
   withdrawn: number; // o Cofre: total sacado, define a patente
   withdrawCount: number;
   history: Withdrawal[];
   taps: number;
-  tapLevel: number;
-  owned: Record<string, number>;
+  tapLevel: number; // nível do Overclock manual
+  owned: Record<string, number>; // equipamentos de mineração
+  cryptos: string[]; // altcoins liberadas (o bitcoin vem de graça)
   achievements: string[];
   bestCombo: number;
   goldenCaught: number;
@@ -55,6 +58,7 @@ export function freshState(now: number): GameState {
     taps: 0,
     tapLevel: 0,
     owned: {},
+    cryptos: [],
     achievements: [],
     bestCombo: 1,
     goldenCaught: 0,
@@ -83,11 +87,18 @@ export function rankIndex(withdrawn: number): number {
 
 export const rankOf = (s: GameState) => RANKS[rankIndex(s.withdrawn)];
 export const isFrenzy = (s: GameState, now: number) => now < s.frenzyUntil;
+export const hasCrypto = (s: GameState, id: string) => id === 'btc' || s.cryptos.includes(id);
+
+export const cryptoMult = (s: GameState) =>
+  CRYPTOS.reduce((mult, c) => (hasCrypto(s, c.id) ? mult * c.mult : mult), 1);
 
 export const baseIncome = (s: GameState) =>
-  BUSINESSES.reduce((sum, b) => sum + (s.owned[b.id] ?? 0) * b.income, 0);
+  MINERS.reduce((sum, m) => sum + (s.owned[m.id] ?? 0) * m.income, 0);
 
-const globalMult = (s: GameState, now: number) => rankOf(s).mult * (isFrenzy(s, now) ? FRENZY_MULT : 1);
+/** Patente x criptos liberadas, sem o frenesi. */
+export const permanentMult = (s: GameState) => rankOf(s).mult * cryptoMult(s);
+
+const globalMult = (s: GameState, now: number) => permanentMult(s) * (isFrenzy(s, now) ? FRENZY_MULT : 1);
 
 export const incomePerSecond = (s: GameState, now: number) => baseIncome(s) * globalMult(s, now);
 
@@ -108,35 +119,45 @@ export const goldenBag = (s: GameState, now: number) =>
   Math.max(incomePerSecond(s, now) * 90, tapValue(s, now) * 30);
 
 /** Custo de comprar `qty` unidades a partir de `owned` (soma de PG). */
-export function businessCost(b: Business, owned: number, qty = 1): number {
-  const first = b.baseCost * COST_GROWTH ** owned;
+export function minerCost(m: Miner, owned: number, qty = 1): number {
+  const first = m.baseCost * COST_GROWTH ** owned;
   return (first * (COST_GROWTH ** qty - 1)) / (COST_GROWTH - 1);
 }
 
-export function maxAffordable(b: Business, owned: number, balance: number): number {
-  const first = b.baseCost * COST_GROWTH ** owned;
+export function maxAffordable(m: Miner, owned: number, balance: number): number {
+  const first = m.baseCost * COST_GROWTH ** owned;
   if (balance < first) return 0;
   let qty = Math.floor(Math.log((balance * (COST_GROWTH - 1)) / first + 1) / Math.log(COST_GROWTH));
-  while (qty > 0 && businessCost(b, owned, qty) > balance) qty -= 1;
+  while (qty > 0 && minerCost(m, owned, qty) > balance) qty -= 1;
   return qty;
 }
 
-export const tapUpgradeCost = (level: number) => TAP_UPGRADE.baseCost * TAP_UPGRADE.growth ** level;
+export const overclockCost = (level: number) => OVERCLOCK.baseCost * OVERCLOCK.growth ** level;
 
-/** Um negócio aparece quando o anterior já foi comprado ou você chegou perto do preço dele. */
+/** Um equipamento aparece quando o anterior já foi comprado ou você chegou perto do preço dele. */
 export function isRevealed(s: GameState, index: number): boolean {
-  const b = BUSINESSES[index];
-  if (index === 0 || (s.owned[b.id] ?? 0) > 0) return true;
-  const prev = BUSINESSES[index - 1];
-  return (s.owned[prev.id] ?? 0) > 0 || s.lifetime >= b.baseCost * 0.5;
+  const m = MINERS[index];
+  if (index === 0 || (s.owned[m.id] ?? 0) > 0) return true;
+  const prev = MINERS[index - 1];
+  return (s.owned[prev.id] ?? 0) > 0 || s.lifetime >= m.baseCost * 0.5;
+}
+
+/** Nível do núcleo do servidor (0–4): a forma geométrica no centro da tela. */
+export function coreLevel(s: GameState): number {
+  const owned = totalOwned(s);
+  let level = 0;
+  CORE_LEVELS.forEach((l, i) => {
+    if (owned >= l.minMiners) level = i;
+  });
+  return level;
 }
 
 export const botScore = (bot: Bot, minutes: number) => bot.base * Math.pow(1 + minutes / 2, bot.growth);
 
-/** Credita o que os negócios renderam enquanto o jogo estava fechado (vira o relatório de boas-vindas). */
+/** Credita o que os rigs mineraram enquanto o jogo estava fechado (vira o relatório de boas-vindas). */
 export function applyAway(s: GameState, now: number): GameState {
   const away = (now - s.lastSeen) / 1000;
-  const rate = baseIncome(s) * rankOf(s).mult;
+  const rate = baseIncome(s) * permanentMult(s);
   if (away < AWAY_MIN_S || rate <= 0) return { ...s, lastSeen: now, clock: now };
   return {
     ...s,
@@ -154,7 +175,7 @@ const num = (v: unknown, fallback: number) =>
   typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : fallback;
 
 export function saveGame(name: string, s: GameState) {
-  // Rendimento offline ainda não coletado entra no save para não se perder.
+  // Mineração offline ainda não coletada entra no save para não se perder.
   save(saveKey(name), {
     createdAt: s.createdAt,
     balance: s.balance + s.offlineGain,
@@ -165,6 +186,7 @@ export function saveGame(name: string, s: GameState) {
     taps: s.taps,
     tapLevel: s.tapLevel,
     owned: s.owned,
+    cryptos: s.cryptos,
     achievements: s.achievements,
     bestCombo: s.bestCombo,
     goldenCaught: s.goldenCaught,
@@ -181,11 +203,14 @@ export function loadGame(name: string): GameState {
 
   const owned: Record<string, number> = {};
   if (raw.owned && typeof raw.owned === 'object') {
-    for (const b of BUSINESSES) {
-      const v = (raw.owned as Record<string, unknown>)[b.id];
-      if (typeof v === 'number' && Number.isInteger(v) && v > 0) owned[b.id] = v;
+    for (const m of MINERS) {
+      const v = (raw.owned as Record<string, unknown>)[m.id];
+      if (typeof v === 'number' && Number.isInteger(v) && v > 0) owned[m.id] = v;
     }
   }
+  const cryptos = Array.isArray(raw.cryptos)
+    ? raw.cryptos.filter((id): id is string => CRYPTOS.some((c) => c.id === id && c.id !== 'btc'))
+    : [];
   const history = Array.isArray(raw.history)
     ? raw.history
         .filter((h): h is Withdrawal => !!h && typeof h.amount === 'number' && typeof h.at === 'number')
@@ -207,6 +232,7 @@ export function loadGame(name: string): GameState {
       taps: num(raw.taps, 0),
       tapLevel: Math.floor(num(raw.tapLevel, 0)),
       owned,
+      cryptos,
       achievements,
       bestCombo: Math.max(1, num(raw.bestCombo, 1)),
       goldenCaught: num(raw.goldenCaught, 0),

@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom';
 import { sound, vibrate } from '../fx/sound';
 import { MIN_WITHDRAW, RANKS, type Rank } from '../game/config';
 import { rankIndex, type GameState } from '../game/state';
-import { money, multiplier, when } from '../lib/format';
+import { btc, money, multiplier, when } from '../lib/format';
+import { CryptoIcon } from './art';
 import { AnimatedMoney, Confetti, Segmented } from './ui';
 
 export type Receipt = { id: number; amount: number; rankUp: Rank | null };
@@ -25,14 +26,15 @@ export function CashTab({ state, onWithdraw }: { state: GameState; onWithdraw: (
       <header className="tab__head">
         <h2>Saque fictício</h2>
         <p>
-          Sacar sobe sua patente, e cada patente multiplica tudo o que você ganha. O que vai pro Cofre não
-          volta pro saldo, então escolha a hora.
+          Converter o que você minerou e sacar sobe sua patente, e cada patente multiplica toda a mineração. O
+          que vai pro Cofre não volta pro saldo, então escolha a hora.
         </p>
       </header>
 
       <div className="card cash">
         <span className="eyebrow">Disponível</span>
         <AnimatedMoney value={state.balance} className="cash__amount" />
+        <span className="play__btc">≈ {btc(state.balance)}</span>
         <Segmented
           id="share"
           label="Quanto sacar"
@@ -55,7 +57,7 @@ export function CashTab({ state, onWithdraw }: { state: GameState; onWithdraw: (
           whileTap={{ scale: 0.97 }}
           onClick={() => onWithdraw(amount)}
         >
-          Solicitar saque
+          Converter e sacar
         </motion.button>
         <p className="cash__note">
           {can ? 'Vai direto pro seu Cofre (fictício).' : `Mínimo de ${money(MIN_WITHDRAW)} para sacar.`}
@@ -128,14 +130,14 @@ export function CashTab({ state, onWithdraw }: { state: GameState; onWithdraw: (
       </div>
 
       <p className="legal">
-        Isto é um jogo. Nenhum valor real é transferido, e o Money Easy nunca pede chave Pix, CPF ou dados
-        bancários.
+        Simulação: nenhuma criptomoeda real é minerada e nenhum dinheiro real é transferido. O Money Easy nunca
+        pede chave Pix, CPF, carteira cripto ou dados bancários.
       </p>
     </section>
   );
 }
 
-const STEPS = ['Conferindo o cofre…', 'Contando as moedinhas…', 'Liberando o saque fictício…'];
+const STEPS = ['Confirmando os blocos…', 'Convertendo cripto em reais…', 'Liberando o saque fictício…'];
 const PROCESS_MS = 1750;
 
 export function WithdrawFlow({ receipt, onClose }: { receipt: Receipt; onClose: () => void }) {
@@ -164,7 +166,7 @@ export function WithdrawFlow({ receipt, onClose }: { receipt: Receipt; onClose: 
             animate={{ rotateY: 360 }}
             transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}
           >
-            R$
+            <CryptoIcon id="btc" size={84} />
           </motion.div>
           <h3 className="wd__title">Processando saque</h3>
           <AnimatePresence mode="wait">
@@ -214,7 +216,7 @@ export function WithdrawFlow({ receipt, onClose }: { receipt: Receipt; onClose: 
           <span className="eyebrow">Saque fictício concluído</span>
           <strong className="wd__amount">{money(receipt.amount)}</strong>
           <p className="muted">
-            foi direto pro seu Cofre. Nenhum dinheiro real saiu ou entrou em lugar nenhum: é só o jogo.
+            foi direto pro seu Cofre. Nenhuma cripto ou dinheiro real foi movimentado: é só o jogo.
           </p>
           {receipt.rankUp && (
             <motion.div

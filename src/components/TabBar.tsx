@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion';
 import type { ComponentType } from 'react';
-import { IconCash, IconCoin, IconStore, IconTrophy } from './icons';
+import { IconCash, IconGpu, IconServer, IconTrophy } from './icons';
 import type { Tab } from './tabs';
 
 const TABS: { id: Tab; label: string; Icon: ComponentType }[] = [
-  { id: 'play', label: 'Jogar', Icon: IconCoin },
-  { id: 'shop', label: 'Negócios', Icon: IconStore },
+  { id: 'play', label: 'Minerar', Icon: IconServer },
+  { id: 'shop', label: 'Rigs', Icon: IconGpu },
   { id: 'cash', label: 'Saque', Icon: IconCash },
   { id: 'rank', label: 'Ranking', Icon: IconTrophy },
 ];

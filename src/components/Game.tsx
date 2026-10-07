@@ -2,17 +2,18 @@ import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import { sound, vibrate } from '../fx/sound';
 import { ACHIEVEMENTS } from '../game/achievements';
-import { BUSINESSES, MIN_WITHDRAW, RANKS } from '../game/config';
+import { CRYPTOS, MINERS, MIN_WITHDRAW, RANKS } from '../game/config';
 import {
-  businessCost,
   computeTap,
   goldenBag,
+  hasCrypto,
   incomePerSecond,
   isFrenzy,
   isRevealed,
+  minerCost,
+  overclockCost,
   rankIndex,
   rankOf,
-  tapUpgradeCost,
 } from '../game/state';
 import { useGame } from '../game/useGame';
 import { duration, money } from '../lib/format';
@@ -114,11 +115,11 @@ export function GameScreen({ username, onLogout, onFrenzyChange }: Props) {
     const at = Date.now();
     if (Math.random() < 0.45) {
       dispatch({ type: 'golden', kind: 'frenzy', now: at });
-      push({ icon: '⚡', title: 'FRENESI! Tudo x7', body: 'Por 15 segundos, toques e negócios rendem 7 vezes mais.' });
+      push({ icon: '🚀', title: 'PUMP! Tudo x7', body: 'Por 15 segundos, cliques e rigs mineram 7 vezes mais.' });
     } else {
       const gain = goldenBag(ref.current, at);
       dispatch({ type: 'golden', kind: 'bag', now: at });
-      push({ icon: '💰', title: `Bolsa de ouro: +${money(gain)}`, body: 'Moeda dourada capturada.' });
+      push({ icon: '🧱', title: `Bloco raro: +${money(gain)}`, body: 'Você minerou um bloco dourado.' });
     }
     sound.golden();
     vibrate([10, 30, 10]);
@@ -135,9 +136,19 @@ export function GameScreen({ username, onLogout, onFrenzyChange }: Props) {
     setTab('play');
   }, [dispatch]);
 
+  const handleBuyCrypto = useCallback(
+    (id: string) => {
+      dispatch({ type: 'buyCrypto', id });
+      sound.achievement();
+      vibrate([10, 30, 10]);
+    },
+    [dispatch],
+  );
+
   const canInvest =
-    state.balance >= tapUpgradeCost(state.tapLevel) ||
-    BUSINESSES.some((b, i) => isRevealed(state, i) && state.balance >= businessCost(b, state.owned[b.id] ?? 0));
+    state.balance >= overclockCost(state.tapLevel) ||
+    MINERS.some((m, i) => isRevealed(state, i) && state.balance >= minerCost(m, state.owned[m.id] ?? 0)) ||
+    CRYPTOS.some((c) => !hasCrypto(state, c.id) && state.balance >= c.cost);
   const firstCashReady = state.withdrawCount === 0 && state.balance >= MIN_WITHDRAW;
 
   return (
@@ -163,7 +174,14 @@ export function GameScreen({ username, onLogout, onFrenzyChange }: Props) {
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
               {tab === 'play' && <PlayTab state={state} onTap={handleTap} goTo={goTo} />}
-              {tab === 'shop' && <ShopTab state={state} onBuy={handleBuy} onUpgradeTap={handleUpgradeTap} />}
+              {tab === 'shop' && (
+                <ShopTab
+                  state={state}
+                  onBuy={handleBuy}
+                  onUpgradeTap={handleUpgradeTap}
+                  onBuyCrypto={handleBuyCrypto}
+                />
+              )}
               {tab === 'cash' && <CashTab state={state} onWithdraw={handleWithdraw} />}
               {tab === 'rank' && (
                 <RankTab state={state} username={username} onLogout={onLogout} onReset={handleReset} />
@@ -190,12 +208,12 @@ export function GameScreen({ username, onLogout, onFrenzyChange }: Props) {
             transition={{ type: 'spring', stiffness: 300, damping: 14 }}
             aria-hidden="true"
           >
-            💰
+            ⛏️
           </motion.div>
           <span className="eyebrow">Bem-vindo de volta, {username}</span>
           <strong className="wd__amount">+{money(state.offlineGain)}</strong>
           <p className="muted">
-            Você ficou fora por {duration(state.offlineSeconds)} e seus negócios renderam isso (metade do ritmo
+            Você ficou fora por {duration(state.offlineSeconds)} e seus rigs mineraram isso (metade do ritmo
             normal, até 2 horas).
           </p>
           <button type="button" className="btn btn--gold btn--block" onClick={collectOffline} autoFocus>

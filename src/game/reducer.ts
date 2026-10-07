@@ -1,12 +1,13 @@
-import { BUSINESSES, COMBO_WINDOW_MS, FRENZY_MS, MIN_WITHDRAW } from './config';
+import { COMBO_WINDOW_MS, CRYPTOS, FRENZY_MS, MINERS, MIN_WITHDRAW } from './config';
 import {
   applyAway,
-  businessCost,
   computeTap,
   freshState,
   goldenBag,
+  hasCrypto,
   incomePerSecond,
-  tapUpgradeCost,
+  minerCost,
+  overclockCost,
   type GameState,
 } from './state';
 
@@ -15,6 +16,7 @@ export type Action =
   | { type: 'tap'; now: number }
   | { type: 'buy'; id: string; qty: number }
   | { type: 'upgradeTap' }
+  | { type: 'buyCrypto'; id: string }
   | { type: 'withdraw'; amount: number; now: number }
   | { type: 'golden'; kind: 'frenzy' | 'bag'; now: number }
   | { type: 'unlock'; ids: string[] }
@@ -53,17 +55,22 @@ export function reducer(s: GameState, a: Action): GameState {
       };
     }
     case 'buy': {
-      const b = BUSINESSES.find((x) => x.id === a.id);
-      if (!b || a.qty < 1) return s;
-      const owned = s.owned[b.id] ?? 0;
-      const cost = businessCost(b, owned, a.qty);
+      const m = MINERS.find((x) => x.id === a.id);
+      if (!m || a.qty < 1) return s;
+      const owned = s.owned[m.id] ?? 0;
+      const cost = minerCost(m, owned, a.qty);
       if (cost > s.balance) return s;
-      return { ...s, balance: s.balance - cost, owned: { ...s.owned, [b.id]: owned + a.qty } };
+      return { ...s, balance: s.balance - cost, owned: { ...s.owned, [m.id]: owned + a.qty } };
     }
     case 'upgradeTap': {
-      const cost = tapUpgradeCost(s.tapLevel);
+      const cost = overclockCost(s.tapLevel);
       if (cost > s.balance) return s;
       return { ...s, balance: s.balance - cost, tapLevel: s.tapLevel + 1 };
+    }
+    case 'buyCrypto': {
+      const c = CRYPTOS.find((x) => x.id === a.id);
+      if (!c || hasCrypto(s, c.id) || c.cost > s.balance) return s;
+      return { ...s, balance: s.balance - c.cost, cryptos: [...s.cryptos, c.id] };
     }
     case 'withdraw': {
       const amount = Math.min(a.amount, s.balance);

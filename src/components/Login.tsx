@@ -4,13 +4,14 @@ import { requestTiltPermission, useParallax } from '../fx/parallax';
 import { sound, vibrate } from '../fx/sound';
 import { listProfiles } from '../game/profiles';
 import { RANKS } from '../game/config';
+import { CryptoIcon, HardwareIcon } from './art';
 import { Avatar } from './ui';
 import { IconArrow, IconEye, IconEyeOff, IconLock, IconUser } from './icons';
 
 const FEATURES = [
-  { icon: '🪙', text: 'Toque e ganhe' },
-  { icon: '🏪', text: 'Invista em negócios' },
-  { icon: '💸', text: 'Saque fictício' },
+  { icon: <CryptoIcon id="btc" size={18} />, text: 'Minere tocando' },
+  { icon: <HardwareIcon kind="gpu2" color="#22d3ee" size={20} />, text: 'Monte rigs de GPU' },
+  { icon: <CryptoIcon id="eth" size={18} />, text: 'Libere altcoins' },
 ];
 
 const stagger: Variants = {
@@ -35,7 +36,7 @@ function LogoCoin() {
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: 'spring', stiffness: 180, damping: 13, delay: 0.1 }}
       >
-        <span>R$</span>
+        <CryptoIcon id="btc" size={96} />
       </motion.div>
     </div>
   );
@@ -84,7 +85,7 @@ export function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
           <span aria-hidden="true">Money</span> <span className="login__accent" aria-hidden="true">Easy</span>
         </motion.h1>
         <motion.p className="login__tagline" variants={rise}>
-          Toque, invista e saque. Fique rico de mentirinha.
+          Seu servidor de mineração de bitcoin. De mentirinha.
         </motion.p>
         <motion.ul className="login__features" variants={rise}>
           {FEATURES.map((f) => (
@@ -209,7 +210,7 @@ export function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
         )}
       </motion.div>
 
-      <p className="legal">Jogo fictício. Nenhum dinheiro real é ganho, sacado ou transferido.</p>
+      <p className="legal">Simulação. Nenhuma cripto real é minerada e nenhum dinheiro real é ganho, sacado ou transferido.</p>
     </motion.main>
   );
 }

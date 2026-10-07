@@ -36,12 +36,12 @@ export function RankTab(props: {
   ].sort((a, b) => b.score - a.score);
 
   const stats = [
-    { label: 'Total ganho', value: money(state.lifetime) },
+    { label: 'Total minerado', value: money(state.lifetime) },
     { label: 'Cofre (sacado)', value: money(state.withdrawn) },
-    { label: 'Toques', value: count(state.taps) },
+    { label: 'Cliques', value: count(state.taps) },
     { label: 'Melhor combo', value: multiplier(state.bestCombo) },
-    { label: 'Negócios', value: count(totalOwned(state)) },
-    { label: 'Moedas douradas', value: count(state.goldenCaught) },
+    { label: 'Equipamentos', value: count(totalOwned(state)) },
+    { label: 'Blocos raros', value: count(state.goldenCaught) },
     { label: 'Saques', value: count(state.withdrawCount) },
     { label: 'Tempo de jogo', value: duration(state.playSeconds) },
   ];
@@ -70,7 +70,7 @@ export function RankTab(props: {
       </div>
 
       <div className="card">
-        <h3 className="card__title">Ranking por total ganho</h3>
+        <h3 className="card__title">Ranking por total minerado</h3>
         <ol className="board">
           {entries.map((e, i) => (
             <motion.li

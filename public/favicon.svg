@@ -1,13 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <radialGradient id="g" cx="35%" cy="30%" r="75%">
-      <stop offset="0" stop-color="#fffbe0"/>
-      <stop offset=".35" stop-color="#fbbf24"/>
-      <stop offset=".75" stop-color="#f59e0b"/>
-      <stop offset="1" stop-color="#b45309"/>
-    </radialGradient>
-  </defs>
-  <circle cx="32" cy="32" r="30" fill="url(#g)"/>
-  <circle cx="32" cy="32" r="23" fill="none" stroke="#92400e" stroke-opacity=".35" stroke-width="2" stroke-dasharray="3 3"/>
-  <text x="32" y="41" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="24" fill="#92400e">R$</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <circle cx="12" cy="12" r="11.2" fill="#f7931a"/>
+  <g transform="rotate(14 12 12)" stroke="#fff" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8.6 6.6v10.8M8.6 6.6h4.8a2.6 2.6 0 0 1 0 5.2H8.6M8.6 11.8h5.6a2.8 2.8 0 0 1 0 5.6H8.6"/>
+    <path d="M10.4 4.8v1.8M13 4.8v1.8M10.4 17.4v1.8M13 17.4v1.8"/>
+  </g>
 </svg>

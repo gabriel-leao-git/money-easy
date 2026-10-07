@@ -1,17 +1,21 @@
 import { motion, type Variants } from 'framer-motion';
-import { useState, type CSSProperties } from 'react';
-import { BASE_TAP, BUSINESSES, TAP_UPGRADE, type Business } from '../game/config';
+import { useState, type CSSProperties, type ReactNode } from 'react';
+import { BASE_TAP, CORE_LEVELS, CRYPTOS, MINERS, OVERCLOCK, type Crypto, type Miner } from '../game/config';
 import {
-  businessCost,
+  coreLevel,
+  hasCrypto,
   incomePerSecond,
   isRevealed,
   maxAffordable,
-  rankOf,
-  tapUpgradeCost,
+  minerCost,
+  overclockCost,
+  permanentMult,
   tapValue,
+  totalOwned,
   type GameState,
 } from '../game/state';
-import { money } from '../lib/format';
+import { hashrate, money, multiplier } from '../lib/format';
+import { CryptoIcon, HardwareIcon, OverclockIcon } from './art';
 import { Segmented } from './ui';
 
 type QtyMode = '1' | '10' | 'max';
@@ -33,68 +37,103 @@ function Progress({ value }: { value: number }) {
   );
 }
 
-function BuyButton(props: { qty: number; cost: number; disabled: boolean; onClick: () => void }) {
-  const { qty, cost, disabled, onClick } = props;
+function BuyButton(props: { label: string; cost: number; disabled: boolean; onClick: () => void }) {
+  const { label, cost, disabled, onClick } = props;
   return (
     <motion.button type="button" className="buy" disabled={disabled} whileTap={{ scale: 0.92 }} onClick={onClick}>
-      <small>{qty > 1 ? `Comprar x${qty}` : 'Comprar'}</small>
+      <small>{label}</small>
       <strong>{money(cost)}</strong>
     </motion.button>
   );
 }
 
-function BusinessRow(props: {
-  b: Business;
+function Tile({ popKey, count, children }: { popKey: number; count?: number; children: ReactNode }) {
+  return (
+    <motion.span
+      key={popKey}
+      className="row__tile"
+      initial={{ scale: popKey ? 1.3 : 1, rotate: popKey ? -10 : 0 }}
+      animate={{ scale: 1, rotate: 0 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 12 }}
+    >
+      {children}
+      {count !== undefined && count > 0 && <span className="row__count">{count}</span>}
+    </motion.span>
+  );
+}
+
+function MinerRow(props: {
+  m: Miner;
   state: GameState;
   qtyMode: QtyMode;
   revealed: boolean;
   onBuy: (id: string, qty: number) => void;
 }) {
-  const { b, state, qtyMode, revealed, onBuy } = props;
-  const owned = state.owned[b.id] ?? 0;
+  const { m, state, qtyMode, revealed, onBuy } = props;
+  const owned = state.owned[m.id] ?? 0;
 
   if (!revealed) {
     return (
       <motion.li className="row row--locked" variants={item}>
         <span className="row__tile">?</span>
         <span className="row__body">
-          <strong className="row__name">Negócio misterioso</strong>
-          <span className="row__tagline">Ganhe {money(b.baseCost * 0.5)} no total para revelar</span>
+          <strong className="row__name">Equipamento bloqueado</strong>
+          <span className="row__tagline">Minere {money(m.baseCost * 0.5)} no total para revelar</span>
         </span>
       </motion.li>
     );
   }
 
-  const qty = qtyMode === 'max' ? Math.max(1, maxAffordable(b, owned, state.balance)) : Number(qtyMode);
-  const cost = businessCost(b, owned, qty);
+  const qty = qtyMode === 'max' ? Math.max(1, maxAffordable(m, owned, state.balance)) : Number(qtyMode);
+  const cost = minerCost(m, owned, qty);
   const ready = state.balance >= cost;
-  const each = b.income * rankOf(state).mult;
+  const each = m.income * permanentMult(state);
 
   return (
-    <motion.li
-      className={`row${ready ? ' is-ready' : ''}`}
-      variants={item}
-      style={{ '--accent': b.color } as CSSProperties}
-    >
-      <motion.span
-        key={owned}
-        className="row__tile"
-        initial={{ scale: owned ? 1.3 : 1, rotate: owned ? -10 : 0 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 12 }}
-      >
-        <span aria-hidden="true">{b.emoji}</span>
-        {owned > 0 && <span className="row__count">{owned}</span>}
-      </motion.span>
+    <motion.li className={`row${ready ? ' is-ready' : ''}`} variants={item} style={{ '--accent': m.color } as CSSProperties}>
+      <Tile popKey={owned} count={owned}>
+        <HardwareIcon kind={m.kind} color={m.color} />
+      </Tile>
       <span className="row__body">
-        <strong className="row__name">{b.name}</strong>
+        <strong className="row__name">{m.name}</strong>
         <span className="row__meta">
-          +{money(each)}/s cada{owned > 0 && <> · rende {money(each * owned)}/s</>}
+          ⚡ {hashrate(each)} · +{money(each)}/s
         </span>
-        <span className="row__tagline">{b.tagline}</span>
+        <span className="row__tagline">{m.tagline}</span>
         {!ready && <Progress value={state.balance / cost} />}
       </span>
-      <BuyButton qty={qty} cost={cost} disabled={!ready} onClick={() => onBuy(b.id, qty)} />
+      <BuyButton label={qty > 1 ? `Comprar x${qty}` : 'Comprar'} cost={cost} disabled={!ready} onClick={() => onBuy(m.id, qty)} />
+    </motion.li>
+  );
+}
+
+function CryptoRow({ c, state, onBuy }: { c: Crypto; state: GameState; onBuy: (id: string) => void }) {
+  const owned = hasCrypto(state, c.id);
+  const ready = !owned && state.balance >= c.cost;
+  return (
+    <motion.li
+      className={`row${owned ? ' is-owned' : ready ? ' is-ready' : ''}`}
+      variants={item}
+      style={{ '--accent': owned ? '#34d399' : '#f7931a' } as CSSProperties}
+    >
+      <Tile popKey={owned ? 1 : 0}>
+        <CryptoIcon id={c.id} />
+      </Tile>
+      <span className="row__body">
+        <strong className="row__name">
+          {c.name} <span className="row__ticker">{c.ticker}</span>
+        </strong>
+        <span className="row__meta">
+          {c.mult > 1 ? `${multiplier(c.mult)} em toda a mineração` : 'Moeda base da mineração'}
+        </span>
+        <span className="row__tagline">{c.tagline}</span>
+        {!owned && !ready && <Progress value={state.balance / c.cost} />}
+      </span>
+      {owned ? (
+        <span className="owned-badge">Minerando ✓</span>
+      ) : (
+        <BuyButton label="Liberar" cost={c.cost} disabled={!ready} onClick={() => onBuy(c.id)} />
+      )}
     </motion.li>
   );
 }
@@ -103,20 +142,30 @@ export function ShopTab(props: {
   state: GameState;
   onBuy: (id: string, qty: number) => void;
   onUpgradeTap: () => void;
+  onBuyCrypto: (id: string) => void;
 }) {
-  const { state, onBuy, onUpgradeTap } = props;
+  const { state, onBuy, onUpgradeTap, onBuyCrypto } = props;
   const [qtyMode, setQtyMode] = useState<QtyMode>('1');
   const now = state.clock;
-  const tapCost = tapUpgradeCost(state.tapLevel);
-  const tapReady = state.balance >= tapCost;
+  const ips = incomePerSecond(state, now);
+  const ocCost = overclockCost(state.tapLevel);
+  const ocReady = state.balance >= ocCost;
+  const level = coreLevel(state);
+  const next = CORE_LEVELS[level + 1];
 
   return (
     <section className="tab">
       <header className="tab__head">
-        <h2>Negócios</h2>
+        <h2>Rigs e GPUs</h2>
         <p>
-          Cada negócio rende sozinho, até com o app fechado. Rendendo agora:{' '}
-          <strong className="text-green">{money(incomePerSecond(state, now))}/s</strong>
+          Cada equipamento minera sozinho, até com o app fechado. Hashrate:{' '}
+          <strong className="text-cyan">{hashrate(ips)}</strong> · <strong className="text-green">{money(ips)}/s</strong>
+        </p>
+        <p className="tab__sub">
+          Núcleo {CORE_LEVELS[level].name}
+          {next
+            ? ` · com ${next.minMiners} equipamentos ele vira ${next.name} (você tem ${totalOwned(state)})`
+            : ' · forma final'}
         </p>
       </header>
 
@@ -134,40 +183,35 @@ export function ShopTab(props: {
 
       <motion.ul className="list" variants={list} initial="hidden" animate="show">
         <motion.li
-          className={`row row--upgrade${tapReady ? ' is-ready' : ''}`}
+          className={`row${ocReady ? ' is-ready' : ''}`}
           variants={item}
-          style={{ '--accent': TAP_UPGRADE.color } as CSSProperties}
+          style={{ '--accent': OVERCLOCK.color } as CSSProperties}
         >
-          <motion.span
-            key={state.tapLevel}
-            className="row__tile"
-            initial={{ scale: state.tapLevel ? 1.3 : 1 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 12 }}
-          >
-            <span aria-hidden="true">{TAP_UPGRADE.emoji}</span>
-            <span className="row__count">{state.tapLevel}</span>
-          </motion.span>
+          <Tile popKey={state.tapLevel} count={state.tapLevel}>
+            <OverclockIcon />
+          </Tile>
           <span className="row__body">
-            <strong className="row__name">{TAP_UPGRADE.name}</strong>
-            <span className="row__meta">Agora: {money(tapValue(state, now))} por toque</span>
-            <span className="row__tagline">
-              +{money(BASE_TAP * rankOf(state).mult)}/toque por nível
-            </span>
-            {!tapReady && <Progress value={state.balance / tapCost} />}
+            <strong className="row__name">{OVERCLOCK.name}</strong>
+            <span className="row__meta">Agora: {money(tapValue(state, now))} por clique</span>
+            <span className="row__tagline">+{money(BASE_TAP * permanentMult(state))}/clique por nível</span>
+            {!ocReady && <Progress value={state.balance / ocCost} />}
           </span>
-          <BuyButton qty={1} cost={tapCost} disabled={!tapReady} onClick={onUpgradeTap} />
+          <BuyButton label="Comprar" cost={ocCost} disabled={!ocReady} onClick={onUpgradeTap} />
         </motion.li>
 
-        {BUSINESSES.map((b, i) => (
-          <BusinessRow
-            key={b.id}
-            b={b}
-            state={state}
-            qtyMode={qtyMode}
-            revealed={isRevealed(state, i)}
-            onBuy={onBuy}
-          />
+        {MINERS.map((m, i) => (
+          <MinerRow key={m.id} m={m} state={state} qtyMode={qtyMode} revealed={isRevealed(state, i)} onBuy={onBuy} />
+        ))}
+      </motion.ul>
+
+      <header className="tab__head">
+        <h2>Criptomoedas</h2>
+        <p>Cada moeda que você libera multiplica toda a mineração, e os multiplicadores se acumulam. Compra única.</p>
+      </header>
+
+      <motion.ul className="list" variants={list} initial="hidden" animate="show">
+        {CRYPTOS.map((c) => (
+          <CryptoRow key={c.id} c={c} state={state} onBuy={onBuyCrypto} />
         ))}
       </motion.ul>
     </section>

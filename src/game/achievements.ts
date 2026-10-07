@@ -1,5 +1,5 @@
 import { MAX_COMBO_MULT, RANKS } from './config';
-import { totalOwned, type GameState } from './state';
+import { coreLevel, totalOwned, type GameState } from './state';
 
 export type Achievement = {
   id: string;
@@ -9,19 +9,21 @@ export type Achievement = {
   check: (s: GameState) => boolean;
 };
 
-const investor = RANKS.find((r) => r.name === 'Investidor')!;
+const trader = RANKS.find((r) => r.name === 'Trader')!;
 
 export const ACHIEVEMENTS: readonly Achievement[] = [
-  { id: 'first-tap', icon: '🪙', title: 'Primeiro real', desc: 'Toque na moeda pela primeira vez', check: (s) => s.taps >= 1 },
-  { id: 'taps-100', icon: '👆', title: 'Dedo aquecido', desc: 'Faça 100 toques', check: (s) => s.taps >= 100 },
-  { id: 'taps-1000', icon: '🔥', title: 'Tendinite de rico', desc: 'Faça 1.000 toques', check: (s) => s.taps >= 1000 },
-  { id: 'combo-max', icon: '⚡', title: 'Combo insano', desc: `Chegue ao combo x${MAX_COMBO_MULT}`, check: (s) => s.bestCombo >= MAX_COMBO_MULT },
-  { id: 'first-biz', icon: '🏪', title: 'CNPJ na mão', desc: 'Compre seu primeiro negócio', check: (s) => totalOwned(s) >= 1 },
-  { id: 'biz-50', icon: '🏙️', title: 'Conglomerado', desc: 'Tenha 50 negócios', check: (s) => totalOwned(s) >= 50 },
+  { id: 'first-tap', icon: '⛏️', title: 'Primeiro hash', desc: 'Minere na mão pela primeira vez', check: (s) => s.taps >= 1 },
+  { id: 'taps-100', icon: '👆', title: 'Dedo minerador', desc: 'Faça 100 cliques no núcleo', check: (s) => s.taps >= 100 },
+  { id: 'taps-1000', icon: '🔥', title: 'Hash na unha', desc: 'Faça 1.000 cliques no núcleo', check: (s) => s.taps >= 1000 },
+  { id: 'combo-max', icon: '⚡', title: 'Overclock humano', desc: `Chegue ao combo x${MAX_COMBO_MULT}`, check: (s) => s.bestCombo >= MAX_COMBO_MULT },
+  { id: 'first-biz', icon: '🖥️', title: 'Primeira GPU', desc: 'Compre seu primeiro equipamento', check: (s) => totalOwned(s) >= 1 },
+  { id: 'biz-50', icon: '🏭', title: 'Fazendeiro de hash', desc: 'Tenha 50 equipamentos', check: (s) => totalOwned(s) >= 50 },
+  { id: 'core-max', icon: '💠', title: 'Núcleo Icosa', desc: 'Evolua o núcleo até a forma final', check: (s) => coreLevel(s) >= 4 },
+  { id: 'first-crypto', icon: '🔀', title: 'Diversificou', desc: 'Libere sua primeira altcoin', check: (s) => s.cryptos.length >= 1 },
   { id: 'first-cash', icon: '💸', title: 'Saque de mentirinha', desc: 'Faça o primeiro saque fictício', check: (s) => s.withdrawCount >= 1 },
-  { id: 'golden', icon: '✨', title: 'Mão de ouro', desc: 'Pegue uma moeda dourada', check: (s) => s.goldenCaught >= 1 },
-  { id: 'million', icon: '💰', title: 'Primeiro milhão', desc: 'Ganhe R$ 1 milhão no total', check: (s) => s.lifetime >= 1e6 },
-  { id: 'investor', icon: '📈', title: 'Patente Investidor', desc: 'Chegue à patente Investidor', check: (s) => s.withdrawn >= investor.min },
-  { id: 'billion', icon: '🏆', title: 'Bilhão no bolso', desc: 'Ganhe R$ 1 bilhão no total', check: (s) => s.lifetime >= 1e9 },
-  { id: 'rocket', icon: '🚀', title: 'Rumo à Lua', desc: 'Compre uma empresa de foguetes', check: (s) => (s.owned.foguete ?? 0) >= 1 },
+  { id: 'golden', icon: '🧱', title: 'Bloco raro', desc: 'Pegue um bloco dourado', check: (s) => s.goldenCaught >= 1 },
+  { id: 'million', icon: '💰', title: 'Primeiro milhão', desc: 'Minere R$ 1 milhão no total', check: (s) => s.lifetime >= 1e6 },
+  { id: 'trader', icon: '📈', title: 'Patente Trader', desc: 'Chegue à patente Trader', check: (s) => s.withdrawn >= trader.min },
+  { id: 'billion', icon: '🏆', title: 'Bilhão minerado', desc: 'Minere R$ 1 bilhão no total', check: (s) => s.lifetime >= 1e9 },
+  { id: 'quantum', icon: '⚛️', title: 'Salto quântico', desc: 'Compre um data center quântico', check: (s) => (s.owned.quantum ?? 0) >= 1 },
 ];

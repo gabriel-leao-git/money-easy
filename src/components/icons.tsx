@@ -18,18 +18,21 @@ function Svg({ children, size = 22 }: { children: ReactNode; size?: number }) {
   );
 }
 
-export const IconCoin = () => (
+export const IconServer = () => (
   <Svg>
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M14.6 9.6c-.4-.9-1.4-1.6-2.6-1.6-1.5 0-2.6.8-2.6 2s1 1.6 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2c-1.2 0-2.2-.6-2.6-1.6M12 6.4v1.6M12 16v1.6" />
+    <rect x="6" y="6" width="12" height="12" rx="2" />
+    <path d="M10 10h4v4h-4z" />
+    <path d="M9.5 3v3M14.5 3v3M9.5 18v3M14.5 18v3M3 9.5h3M3 14.5h3M18 9.5h3M18 14.5h3" />
   </Svg>
 );
 
-export const IconStore = () => (
+export const IconGpu = () => (
   <Svg>
-    <path d="M4.5 10.5V19a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-8.5" />
-    <path d="M3 10l1.9-5.3A1 1 0 0 1 5.8 4h12.4a1 1 0 0 1 .9.7L21 10c0 1.7-1.3 3-3 3s-3-1.3-3-3c0 1.7-1.3 3-3 3s-3-1.3-3-3c0 1.7-1.3 3-3 3s-3-1.3-3-3z" />
-    <path d="M10 20v-4h4v4" />
+    <path d="M3 6v13" />
+    <rect x="3" y="7.5" width="18" height="9.5" rx="1.6" />
+    <circle cx="9" cy="12.25" r="2.6" />
+    <circle cx="15.5" cy="12.25" r="2.6" />
+    <path d="M7 17v2.5h7V17" />
   </Svg>
 );
 
