@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { CRYPTOS, MINERS, MIN_WITHDRAW } from '../game/config';
 import {
-  coreLevel,
+  coinTier,
   hasCrypto,
   incomePerSecond,
   isFrenzy,
@@ -110,7 +110,7 @@ export function PlayTab(props: { state: GameState; onTap: () => TapResult; goTo:
   const now = state.clock;
   const ips = incomePerSecond(state, now);
   const caption =
-    state.taps === 0 ? 'Toque no núcleo para minerar' : ips > 0 ? 'Servidor online' : 'Servidor sem GPU';
+    state.taps === 0 ? 'Toque na moeda para minerar' : ips > 0 ? 'Servidor online' : 'Servidor sem GPU';
 
   return (
     <section className="play">
@@ -125,7 +125,8 @@ export function PlayTab(props: { state: GameState; onTap: () => TapResult; goTo:
         </div>
       </div>
       <MiningCore
-        level={coreLevel(state)}
+        tier={coinTier(state)}
+        coins={CRYPTOS.filter((c) => hasCrypto(state, c.id)).map((c) => c.id)}
         income={ips}
         combo={state.combo}
         frenzy={isFrenzy(state, now)}

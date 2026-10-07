@@ -72,13 +72,13 @@ export const CRYPTOS: readonly Crypto[] = [
   { id: 'ada', name: 'Cardano', ticker: 'ADA', tagline: 'Devagar e sempre, só que x3', cost: 5_000_000_000, mult: 3 },
 ];
 
-// O núcleo do servidor muda de forma conforme você junta equipamentos.
-export const CORE_LEVELS = [
-  { name: 'Tetra', minMiners: 0 },
-  { name: 'Cubo', minMiners: 5 },
-  { name: 'Octa', minMiners: 15 },
-  { name: 'Dodeca', minMiners: 35 },
-  { name: 'Icosa', minMiners: 75 },
+// A moeda do centro da tela muda de material conforme você junta equipamentos.
+export const COIN_TIERS = [
+  { name: 'Bronze', minMiners: 0 },
+  { name: 'Prata', minMiners: 5 },
+  { name: 'Ouro', minMiners: 15 },
+  { name: 'Platina', minMiners: 35 },
+  { name: 'Diamante', minMiners: 75 },
 ] as const;
 
 export type Rank = { name: string; min: number; mult: number; color: string };

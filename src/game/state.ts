@@ -1,9 +1,9 @@
 import {
   AWAY_MIN_S,
   BASE_TAP,
+  COIN_TIERS,
   COMBO_STEP,
   COMBO_WINDOW_MS,
-  CORE_LEVELS,
   COST_GROWTH,
   CRYPTOS,
   FRENZY_MULT,
@@ -142,14 +142,14 @@ export function isRevealed(s: GameState, index: number): boolean {
   return (s.owned[prev.id] ?? 0) > 0 || s.lifetime >= m.baseCost * 0.5;
 }
 
-/** Nível do núcleo do servidor (0–4): a forma geométrica no centro da tela. */
-export function coreLevel(s: GameState): number {
+/** Nível da moeda do centro da tela (0–4): o material da borda, de bronze a diamante. */
+export function coinTier(s: GameState): number {
   const owned = totalOwned(s);
-  let level = 0;
-  CORE_LEVELS.forEach((l, i) => {
-    if (owned >= l.minMiners) level = i;
+  let tier = 0;
+  COIN_TIERS.forEach((t, i) => {
+    if (owned >= t.minMiners) tier = i;
   });
-  return level;
+  return tier;
 }
 
 export const botScore = (bot: Bot, minutes: number) => bot.base * Math.pow(1 + minutes / 2, bot.growth);

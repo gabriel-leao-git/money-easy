@@ -1060,53 +1060,120 @@ svg {
   border: 0;
   border-radius: 50%;
   background: radial-gradient(circle, #1f1650 0%, #120c2e 52%, transparent 70%);
+  perspective: 700px;
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
 
-.core__svg {
+/* Moeda 3D: discos empilhados fazem a espessura e as duas faces trocam de cripto a cada meia volta.
+   Nada de opacity < 1 nem filter em .coin/.coin__body: os dois achatam o preserve-3d. */
+.coin {
+  --hi: #f3b27a;
+  --mid: #a95c2a;
+  --lo: #7a3f17;
+  --glow: rgba(243, 146, 72, 0.35);
+  position: absolute;
+  inset: 17%;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.coin--t1 {
+  --hi: #f8fafc;
+  --mid: #9aa3b5;
+  --lo: #6b7385;
+  --glow: rgba(226, 232, 240, 0.32);
+}
+
+.coin--t2 {
+  --hi: #fde68a;
+  --mid: #ca8a04;
+  --lo: #8a5203;
+  --glow: rgba(251, 191, 36, 0.5);
+}
+
+.coin--t3 {
+  --hi: #e0f2fe;
+  --mid: #8796b8;
+  --lo: #4f5f80;
+  --glow: rgba(125, 211, 252, 0.5);
+}
+
+.coin--t4 {
+  --hi: #a5f3fc;
+  --mid: #22d3ee;
+  --lo: #6d28d9;
+  --glow: rgba(34, 211, 238, 0.65);
+}
+
+.coin__body {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.coin__edge {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--lo);
+}
+
+.coin__edge:nth-child(even) {
+  background: var(--mid);
+}
+
+.coin__face {
+  position: absolute;
+  inset: 0;
+  padding: 7%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--hi), var(--mid) 42%, var(--lo) 58%, var(--hi));
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.4),
+    0 0 26px var(--glow);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.coin__face svg {
+  display: block;
   width: 100%;
   height: 100%;
-  overflow: visible;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px var(--lo),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.2);
 }
 
-.core__shell {
-  fill: none;
-  stroke: var(--magenta);
-  stroke-width: 1;
-  stroke-dasharray: 3 5;
-  opacity: 0.55;
+/* brilho fixo na diagonal, por cima da cripto */
+.coin__face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 50%;
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.42), transparent 36%, transparent 70%, rgba(255, 255, 255, 0.12));
+  pointer-events: none;
 }
 
-.core__back {
-  fill: none;
-  stroke: #7c6fd6;
-  stroke-width: 1.4;
-  opacity: 0.45;
+/* escurece a face quando ela fica de lado (opacity atualizada a cada frame) */
+.coin__shade {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 50%;
+  background: #000;
+  opacity: 0;
 }
 
-.core__front {
-  fill: none;
-  stroke: var(--cyan-2);
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 4px var(--cyan));
-}
-
-.core__vertex {
-  fill: #fff;
-  filter: drop-shadow(0 0 4px var(--cyan));
-}
-
-.core__stage.is-frenzy .core__front {
-  stroke: var(--orange-2);
-  filter: drop-shadow(0 0 5px var(--orange));
-}
-
-.core__stage.is-frenzy .core__shell {
-  stroke: var(--gold);
+.core__stage.is-frenzy .coin__face {
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.5),
+    0 0 38px rgba(247, 147, 26, 0.85);
 }
 
 .core__caption {

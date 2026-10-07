@@ -6,7 +6,7 @@ Simulador **fictício** de servidor de mineração de bitcoin. Mobile first, com
 
 ## Como se joga
 
-- **Núcleo do servidor**: no centro da tela, um sólido geométrico girando em 3D gera dinheiro sozinho a cada segundo. Ele gira mais rápido conforme o hashrate e muda de forma conforme você junta equipamentos (tetraedro → cubo → octaedro → dodecaedro → icosaedro). Clicar nele minera na mão (R$ 10 por clique), e clicar rápido monta **combo** até x5.
+- **Moeda de mineração**: no centro da tela, uma moeda 3D girando gera dinheiro sozinha a cada segundo. A cada meia volta a face troca pela próxima cripto que você liberou (Bitcoin, Litecoin, Dogecoin, Ethereum, Solana, Cardano), ela gira mais rápido conforme o hashrate e a borda muda de material conforme você junta equipamentos (bronze → prata → ouro → platina → diamante). Clicar nela minera na mão (R$ 10 por clique), e clicar rápido monta **combo** até x5.
 - **Rigs e GPUs**: oito equipamentos, da GPU de entrada ao data center quântico, que mineram sozinhos, inclusive com o app fechado (metade do ritmo, até 2 horas). O **Overclock manual** aumenta o valor de cada clique.
 - **Criptomoedas**: Litecoin, Dogecoin, Ethereum, Solana e Cardano. Cada uma liberada multiplica toda a mineração, e os multiplicadores se acumulam.
 - **Saque fictício** (mínimo R$ 50): o valor sai do saldo e vai pro **Cofre**. O total no Cofre define a **patente** (Novato → Lenda do blockchain), e cada patente multiplica toda a mineração.
@@ -33,7 +33,7 @@ O login é **sem autenticação**: qualquer usuário e senha entram. O nome só 
 
 - React 19 + TypeScript + Vite
 - Framer Motion: transições de tela e de abas, springs, `layoutId` na navegação, bottom sheet arrastável, confete, números animados, ranking que reordena com animação
-- Núcleo 3D em SVG projetado a cada frame (`useAnimationFrame`), sem biblioteca 3D
+- Moeda 3D em CSS (discos empilhados com `preserve-3d`) girada a cada frame (`useAnimationFrame`), sem biblioteca 3D
 - Parallax em camadas (foto, brilhos neon, grade de data center, moedas cripto e partículas) movido por **inclinação do celular**, mouse e scroll
 - Ícones de hardware e de cripto desenhados em SVG próprio (não são os logos oficiais)
 - Sons sintetizados com Web Audio e vibração no celular
@@ -59,11 +59,11 @@ src/
   App.tsx               login ↔ jogo, cenário e provider de parallax
   components/
     World.tsx           cenário em parallax
-    MiningCore.tsx      núcleo geométrico 3D (o servidor de mineração)
+    MiningCore.tsx      moeda 3D girando (o servidor de mineração)
     art.tsx             ícones de GPU/rig/ASIC e das criptomoedas
     Login.tsx           tela de login
     Game.tsx            tela do jogo (abas, sheets, toasts, bloco dourado)
-    PlayTab.tsx         saldo, núcleo e próxima meta
+    PlayTab.tsx         saldo, moeda e próxima meta
     ShopTab.tsx         rigs, GPUs, overclock e criptomoedas
     CashTab.tsx         saque fictício, patentes e histórico
     RankTab.tsx         perfil, estatísticas, ranking e conquistas

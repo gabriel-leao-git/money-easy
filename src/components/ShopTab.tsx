@@ -1,8 +1,8 @@
 import { motion, type Variants } from 'framer-motion';
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import { BASE_TAP, CORE_LEVELS, CRYPTOS, MINERS, OVERCLOCK, type Crypto, type Miner } from '../game/config';
+import { BASE_TAP, COIN_TIERS, CRYPTOS, MINERS, OVERCLOCK, type Crypto, type Miner } from '../game/config';
 import {
-  coreLevel,
+  coinTier,
   hasCrypto,
   incomePerSecond,
   isRevealed,
@@ -150,8 +150,8 @@ export function ShopTab(props: {
   const ips = incomePerSecond(state, now);
   const ocCost = overclockCost(state.tapLevel);
   const ocReady = state.balance >= ocCost;
-  const level = coreLevel(state);
-  const next = CORE_LEVELS[level + 1];
+  const tier = coinTier(state);
+  const next = COIN_TIERS[tier + 1];
 
   return (
     <section className="tab">
@@ -162,10 +162,10 @@ export function ShopTab(props: {
           <strong className="text-cyan">{hashrate(ips)}</strong> · <strong className="text-green">{money(ips)}/s</strong>
         </p>
         <p className="tab__sub">
-          Núcleo {CORE_LEVELS[level].name}
+          Moeda {COIN_TIERS[tier].name}
           {next
-            ? ` · com ${next.minMiners} equipamentos ele vira ${next.name} (você tem ${totalOwned(state)})`
-            : ' · forma final'}
+            ? ` · com ${next.minMiners} equipamentos ela vira ${next.name} (você tem ${totalOwned(state)})`
+            : ' · nível máximo'}
         </p>
       </header>
 

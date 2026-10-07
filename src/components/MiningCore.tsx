@@ -8,93 +8,23 @@ import {
 } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
 import { useParallax } from '../fx/parallax';
-import { COMBO_STEP, CORE_LEVELS, MAX_COMBO_MULT } from '../game/config';
+import { COIN_TIERS, COMBO_STEP, MAX_COMBO_MULT, type CryptoId } from '../game/config';
 import { comboMult } from '../game/state';
 import { money, multiplier } from '../lib/format';
+import { CryptoIcon } from './art';
 import { IconBolt } from './icons';
 
-// O "servidor de mineração": um sólido geométrico girando em 3D que gera dinheiro sozinho.
-// A forma evolui com o nível do núcleo (tetraedro → cubo → octaedro → dodecaedro → icosaedro),
-// a velocidade acompanha o hashrate e um clique nele minera na mão (com combo).
+// O "servidor de mineração": uma moeda 3D girando no centro da tela que gera dinheiro sozinha.
+// A cada meia volta a face que some troca pela próxima cripto liberada (Bitcoin, Litecoin, Ethereum...).
+// A borda muda de material com os equipamentos (bronze → prata → ouro → platina → diamante),
+// a velocidade acompanha o hashrate e um clique nela minera na mão (com combo).
 
-type V3 = [number, number, number];
-
-const PHI = (1 + Math.sqrt(5)) / 2;
-const SIGNS = [-1, 1];
-
-function normalize(verts: V3[]): V3[] {
-  const r = Math.hypot(...verts[0]);
-  return verts.map(([x, y, z]) => [x / r, y / r, z / r]);
-}
-
-function edgesOf(verts: V3[]): [number, number][] {
-  const dist = (a: V3, b: V3) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
-  let min = Infinity;
-  for (let i = 0; i < verts.length; i++)
-    for (let j = i + 1; j < verts.length; j++) min = Math.min(min, dist(verts[i], verts[j]));
-  const edges: [number, number][] = [];
-  for (let i = 0; i < verts.length; i++)
-    for (let j = i + 1; j < verts.length; j++) if (dist(verts[i], verts[j]) < min * 1.05) edges.push([i, j]);
-  return edges;
-}
-
-const cube: V3[] = [];
-for (const x of SIGNS) for (const y of SIGNS) for (const z of SIGNS) cube.push([x, y, z]);
-
-const dodeca: V3[] = [...cube];
-const icosa: V3[] = [];
-for (const a of SIGNS)
-  for (const b of SIGNS) {
-    dodeca.push([0, a / PHI, b * PHI], [a / PHI, b * PHI, 0], [a * PHI, 0, b / PHI]);
-    icosa.push([0, a, b * PHI], [a, b * PHI, 0], [a * PHI, 0, b]);
-  }
-
-const SOLIDS = [
-  [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]] as V3[],
-  cube,
-  [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]] as V3[],
-  dodeca,
-  icosa,
-].map((verts) => {
-  const v = normalize(verts);
-  return { verts: v, edges: edgesOf(v) };
-});
-
-const MAX_VERTS = 20;
-const VIEW = 200;
-const CENTER = VIEW / 2;
-const INNER_R = 50;
-const SHELL_R = 82;
-const CAMERA = 3.2;
-
-type Projected = { x: number; y: number; z: number };
-
-function project(verts: V3[], ax: number, ay: number, radius: number, out: Projected[]) {
-  const ca = Math.cos(ax);
-  const sa = Math.sin(ax);
-  const cb = Math.cos(ay);
-  const sb = Math.sin(ay);
-  for (let i = 0; i < verts.length; i++) {
-    const [x, y, z] = verts[i];
-    const x1 = x * cb + z * sb;
-    const z1 = -x * sb + z * cb;
-    const y2 = y * ca - z1 * sa;
-    const z2 = y * sa + z1 * ca;
-    const p = CAMERA / (CAMERA + z2);
-    out[i] = { x: CENTER + x1 * radius * p, y: CENTER + y2 * radius * p, z: z2 };
-  }
-}
-
-function edgePaths(edges: [number, number][], pts: Projected[]) {
-  let front = '';
-  let back = '';
-  for (const [a, b] of edges) {
-    const seg = `M${pts[a].x.toFixed(1)} ${pts[a].y.toFixed(1)}L${pts[b].x.toFixed(1)} ${pts[b].y.toFixed(1)}`;
-    if (pts[a].z + pts[b].z < 0) front += seg;
-    else back += seg;
-  }
-  return { front, back };
-}
+const EDGE_LAYERS = 12; // discos empilhados que formam a espessura da moeda
+const EDGE_GAP = 1.2; // px entre um disco e o seguinte
+const HALF_THICK = ((EDGE_LAYERS - 1) * EDGE_GAP) / 2;
+const EDGES = Array.from({ length: EDGE_LAYERS }, (_, i) => i * EDGE_GAP - HALF_THICK);
+const FACE_Z = HALF_THICK + 0.5;
+const TURN = Math.PI * 2;
 
 type Burst = { id: number; x: number; y: number; text: string; kind: 'tap' | 'hot' | 'passive' };
 
@@ -138,7 +68,8 @@ function BurstFx({ burst, onDone }: { burst: Burst; onDone: (id: number) => void
 const COMBO_COLORS = ['#22d3ee', '#34d399', '#a3e635', '#facc15', '#f7931a', '#fb7185', '#e879f9', '#a78bfa', '#ffffff'];
 
 type Props = {
-  level: number;
+  tier: number;
+  coins: CryptoId[]; // criptos liberadas, na ordem em que aparecem nas faces
   income: number; // R$/s atual
   combo: number;
   frenzy: boolean;
@@ -147,21 +78,16 @@ type Props = {
   onTap: () => { gain: number; mult: number };
 };
 
-export function MiningCore({ level, income, combo, frenzy, frenzyLeft, caption, onTap }: Props) {
+export function MiningCore({ tier, coins, income, combo, frenzy, frenzyLeft, caption, onTap }: Props) {
   const reduce = useReducedMotion();
   const areaRef = useRef<HTMLDivElement>(null);
-  const frontRef = useRef<SVGPathElement>(null);
-  const backRef = useRef<SVGPathElement>(null);
-  const shellRef = useRef<SVGPathElement>(null);
-  const dotRefs = useRef<(SVGCircleElement | null)[]>([]);
-  const angle = useRef({ x: 0.5, y: 0 });
-  const pts = useRef<Projected[]>([]);
-  const shellPts = useRef<Projected[]>([]);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const shadeRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const angle = useRef(0);
+  const halfRef = useRef(0);
+  const [half, setHalf] = useState(0); // quantas meias voltas a moeda já deu
   const seq = useRef(0);
   const [bursts, setBursts] = useState<Burst[]>([]);
-
-  const solid = SOLIDS[level];
-  const shell = SOLIDS[(level + 2) % SOLIDS.length];
 
   // Gira mais rápido quanto maior o hashrate; o frenesi dobra.
   const speed = Math.min(3.2, 0.35 + 0.32 * Math.log10(1 + income)) * (frenzy ? 2 : 1);
@@ -176,31 +102,25 @@ export function MiningCore({ level, income, combo, frenzy, frenzyLeft, caption, 
     const boost = tapBoost.current;
     tapBoost.current = boost * Math.pow(0.02, dt);
     const s = reduce ? 0.08 : speedRef.current + boost;
-    angle.current.y += s * dt;
-    angle.current.x += s * dt * 0.37;
+    angle.current += s * dt;
+    const a = angle.current;
 
-    project(solid.verts, angle.current.x, angle.current.y, INNER_R, pts.current);
-    const inner = edgePaths(solid.edges, pts.current);
-    frontRef.current?.setAttribute('d', inner.front);
-    backRef.current?.setAttribute('d', inner.back);
+    bodyRef.current?.style.setProperty('transform', `rotateY(${(a % TURN).toFixed(4)}rad)`);
+    // Escurece a face quando ela fica de lado, pra dar volume.
+    const shade = ((1 - Math.abs(Math.cos(a))) * 0.6).toFixed(3);
+    for (const el of shadeRefs.current) el?.style.setProperty('opacity', shade);
 
-    project(shell.verts, -angle.current.x * 0.6, -angle.current.y * 0.5, SHELL_R, shellPts.current);
-    const outer = edgePaths(shell.edges, shellPts.current);
-    shellRef.current?.setAttribute('d', outer.front + outer.back);
-
-    for (let i = 0; i < MAX_VERTS; i++) {
-      const dot = dotRefs.current[i];
-      if (!dot) continue;
-      const p = pts.current[i];
-      if (i < solid.verts.length && p) {
-        dot.setAttribute('cx', p.x.toFixed(1));
-        dot.setAttribute('cy', p.y.toFixed(1));
-        dot.setAttribute('r', p.z < 0 ? '3.2' : '2');
-      } else {
-        dot.setAttribute('r', '0');
-      }
+    const h = Math.floor((a + Math.PI / 2) / Math.PI);
+    if (h !== halfRef.current) {
+      halfRef.current = h;
+      setHalf(h);
     }
   });
+
+  // A face visível fica parada; a escondida já mostra a próxima moeda da fila.
+  const pick = (i: number) => coins[i % Math.max(coins.length, 1)] ?? 'btc';
+  const front = pick(half % 2 === 0 ? half : half + 1);
+  const back = pick(half % 2 === 1 ? half : half + 1);
 
   const addBurst = (burst: Omit<Burst, 'id'>) => {
     const id = ++seq.current;
@@ -208,7 +128,7 @@ export function MiningCore({ level, income, combo, frenzy, frenzyLeft, caption, 
   };
   const removeBurst = (id: number) => setBursts((list) => list.filter((b) => b.id !== id));
 
-  // A cada segundo o servidor "entrega" o que minerou: um +R$ sobe do núcleo.
+  // A cada segundo o servidor "entrega" o que minerou: um +R$ sobe da moeda.
   const incomeRef = useRef(income);
   useEffect(() => {
     incomeRef.current = income;
@@ -263,6 +183,11 @@ export function MiningCore({ level, income, combo, frenzy, frenzyLeft, caption, 
   const progress =
     combo === 0 ? 0 : mult >= MAX_COMBO_MULT ? 1 : (((combo - 1) % COMBO_STEP) + 1) / COMBO_STEP;
 
+  const faces: { id: CryptoId; transform: string }[] = [
+    { id: front, transform: `translateZ(${FACE_Z}px)` },
+    { id: back, transform: `rotateY(180deg) translateZ(${FACE_Z}px)` },
+  ];
+
   return (
     <div className="core" ref={areaRef} style={{ '--combo': COMBO_COLORS[comboLevel] } as CSSProperties}>
       <div className="core__status">
@@ -315,31 +240,34 @@ export function MiningCore({ level, income, combo, frenzy, frenzyLeft, caption, 
           onPointerDown={onPointerDown}
           onKeyDown={onKeyDown}
           onContextMenu={(e) => e.preventDefault()}
-          aria-label="Núcleo do servidor de mineração. Toque para minerar na mão"
+          aria-label="Moeda de mineração. Toque para minerar na mão"
         >
-          <motion.svg
-            key={level}
-            className="core__svg"
-            viewBox={`0 0 ${VIEW} ${VIEW}`}
-            initial={{ scale: 0.3, opacity: 0, rotate: -90 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+          {/* Sem opacity nem filter na moeda: os dois achatam o 3D. */}
+          <motion.div
+            key={tier}
+            className={`coin coin--t${tier}`}
+            initial={{ scale: 0.3, rotate: -120 }}
+            animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 160, damping: 14 }}
             aria-hidden="true"
           >
-            <path ref={shellRef} className="core__shell" />
-            <path ref={backRef} className="core__back" />
-            <path ref={frontRef} className="core__front" />
-            {Array.from({ length: MAX_VERTS }, (_, i) => (
-              <circle
-                key={i}
-                ref={(el) => {
-                  dotRefs.current[i] = el;
-                }}
-                className="core__vertex"
-                r="0"
-              />
-            ))}
-          </motion.svg>
+            <div className="coin__body" ref={bodyRef}>
+              {EDGES.map((z) => (
+                <span key={z} className="coin__edge" style={{ transform: `translateZ(${z}px)` }} />
+              ))}
+              {faces.map((face, i) => (
+                <span key={i} className="coin__face" style={{ transform: face.transform }}>
+                  <CryptoIcon id={face.id} size={120} />
+                  <span
+                    className="coin__shade"
+                    ref={(el) => {
+                      shadeRefs.current[i] = el;
+                    }}
+                  />
+                </span>
+              ))}
+            </div>
+          </motion.div>
         </motion.button>
       </div>
 
@@ -349,7 +277,7 @@ export function MiningCore({ level, income, combo, frenzy, frenzyLeft, caption, 
 
       <p className="core__caption">
         <span className={`core__led${income > 0 ? ' is-on' : ''}`} />
-        {caption} · Núcleo {CORE_LEVELS[level].name}
+        {caption} · Moeda {COIN_TIERS[tier].name}
       </p>
     </div>
   );
