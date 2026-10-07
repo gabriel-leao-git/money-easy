@@ -52,6 +52,13 @@ export const IconTrophy = () => (
   </Svg>
 );
 
+export const IconDownload = () => (
+  <Svg>
+    <path d="M12 3.5v11M7.5 10.5l4.5 4.5 4.5-4.5" />
+    <path d="M4 15.5v2.8A2.2 2.2 0 0 0 6.2 20.5h11.6a2.2 2.2 0 0 0 2.2-2.2v-2.8" />
+  </Svg>
+);
+
 export const IconSound = () => (
   <Svg size={20}>
     <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" />

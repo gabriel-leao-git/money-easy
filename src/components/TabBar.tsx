@@ -1,7 +1,10 @@
 import { motion } from 'framer-motion';
 import type { ComponentType } from 'react';
-import { IconCash, IconGpu, IconServer, IconTrophy } from './icons';
+import { IconCash, IconDownload, IconGpu, IconServer, IconTrophy } from './icons';
 import type { Tab } from './tabs';
+
+// O dev e o preview servem o APK direto da raiz do repo (ver vite.config.ts).
+const APK_URL = `${import.meta.env.BASE_URL}instal-app.apk`;
 
 const TABS: { id: Tab; label: string; Icon: ComponentType }[] = [
   { id: 'play', label: 'Minerar', Icon: IconServer },
@@ -14,9 +17,10 @@ type Props = {
   tab: Tab;
   onChange: (tab: Tab) => void;
   badges: Partial<Record<Tab, boolean>>;
+  onDownload: () => void;
 };
 
-export function TabBar({ tab, onChange, badges }: Props) {
+export function TabBar({ tab, onChange, badges, onDownload }: Props) {
   return (
     <motion.nav
       className="tabbar"
@@ -56,6 +60,18 @@ export function TabBar({ tab, onChange, badges }: Props) {
             </button>
           );
         })}
+        <a
+          className="tabbar__btn tabbar__btn--download"
+          href={APK_URL}
+          download
+          onClick={onDownload}
+          title="Baixar o app (APK para Android)"
+        >
+          <span className="tabbar__icon">
+            <IconDownload />
+          </span>
+          <span>Download</span>
+        </a>
       </div>
     </motion.nav>
   );

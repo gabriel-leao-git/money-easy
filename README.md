@@ -17,6 +17,10 @@ Simulador **fictício** de servidor de mineração de bitcoin. Mobile first, com
 
 O fundo é a foto em `public/bg-mining.jpg`, com parallax. Sem esse arquivo, aparece um degradê neon no lugar.
 
+## Download do app
+
+O botão **Download** do menu baixa o `instal-app.apk` (Android). O arquivo fica na raiz do repo, fora do git, e o `npm run dev` e o `npm run preview` servem ele direto de lá em `/instal-app.apk`, sem copiar. Num host estático só com o `dist/`, o APK não vai junto e o botão dá 404.
+
 ## Login (MVP)
 
 O login é **sem autenticação**: qualquer usuário e senha entram. O nome só escolhe qual save carregar; a senha não é enviada nem guardada. Todo o progresso fica no `localStorage` do aparelho, então não há backend.

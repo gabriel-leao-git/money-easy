@@ -838,7 +838,7 @@ svg {
   max-width: 520px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 4px;
   padding: 6px;
   border-radius: 24px;
@@ -876,6 +876,19 @@ svg {
 
 .tabbar__btn.is-active .tabbar__icon {
   color: var(--orange);
+}
+
+/* Download não é aba: é um link pro APK, com o ícone verde pra se ler como ação. */
+.tabbar__btn--download {
+  text-decoration: none;
+}
+
+.tabbar__btn--download .tabbar__icon {
+  color: var(--green-2);
+}
+
+.tabbar__btn--download:active {
+  background: var(--panel-3);
 }
 
 .tabbar__pill {

@@ -145,6 +145,11 @@ export function GameScreen({ username, onLogout, onFrenzyChange }: Props) {
     [dispatch],
   );
 
+  const handleDownload = useCallback(() => {
+    push({ icon: '📲', title: 'Baixando o app', body: 'Arquivo APK, para instalar no Android.' });
+    vibrate(10);
+  }, [push]);
+
   const canInvest =
     state.balance >= overclockCost(state.tapLevel) ||
     MINERS.some((m, i) => isRevealed(state, i) && state.balance >= minerCost(m, state.owned[m.id] ?? 0)) ||
@@ -191,7 +196,12 @@ export function GameScreen({ username, onLogout, onFrenzyChange }: Props) {
         </main>
       </motion.div>
 
-      <TabBar tab={tab} onChange={goTo} badges={{ shop: canInvest, cash: firstCashReady }} />
+      <TabBar
+        tab={tab}
+        onChange={goTo}
+        badges={{ shop: canInvest, cash: firstCashReady }}
+        onDownload={handleDownload}
+      />
       <GoldenCoin onCatch={handleGolden} />
       <Toasts items={toasts} />
 
